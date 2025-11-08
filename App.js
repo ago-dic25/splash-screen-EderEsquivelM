@@ -1,54 +1,53 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, Text, View, Button, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, Text, View, Button, Platform, Image } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as MediaLibrary from "expo-media-library";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import * as SplashScreen from "expo-splash-screen";
 import { LinearGradient } from "expo-linear-gradient";
 
-SplashScreen.preventAutoHideAsync(); // 👈 Evita que el splash desaparezca automáticamente
-
 export default function App() {
-  const [isSplashVisible, setIsSplashVisible] = useState(true); // controla si se muestra el splash
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
   const [foto, setFoto] = useState(null);
   const [cameraRef, setCameraRef] = useState(null);
   const [permission, requestPermission] = useCameraPermissions();
 
-  // Permisos
   useEffect(() => {
     (async () => {
       await MediaLibrary.requestPermissionsAsync();
       await requestPermission();
     })();
-  }, []);
 
-  // Controla cuánto dura el splash (3 segundos)
-  useEffect(() => {
-    const timer = setTimeout(async () => {
+    // Muestra el splash 3 segundos
+    const timer = setTimeout(() => {
       setIsSplashVisible(false);
-      await SplashScreen.hideAsync(); // oculta el splash nativo
     }, 3000);
+
     return () => clearTimeout(timer);
   }, []);
 
-  // Si todavía está el splash, mostramos la pantalla de gradiente
+  // 🔹 Pantalla splash
   if (isSplashVisible) {
     return (
       <LinearGradient
-        colors={["#6a11cb", "#2575fc"]} // 🎨 gradiente morado-azul
+        colors={["#ff9966", "#ff5e62"]} // Gradiente naranja/rojo
         style={styles.splashContainer}
       >
-        <Text style={styles.splashText}>Cargando aplicación...</Text>
+        {/* Puedes mostrar tu imagen splash.png aquí */}
+        <Image
+          source={require("./assets/splash.png")}
+          style={{ width: 200, height: 200, marginBottom: 20 }}
+          resizeMode="contain"
+        />
+        <Text style={styles.splashText}>Bienvenido al visor de cámara</Text>
       </LinearGradient>
     );
   }
 
-  // Si aún no se han cargado los permisos
+  // 🔹 Estado de permisos
   if (!permission) {
     return <Text>Cargando permisos...</Text>;
   }
 
-  // Si no hay permisos
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -58,7 +57,7 @@ export default function App() {
     );
   }
 
-  // Toma de foto
+  // 🔹 Función para tomar foto
   const tomarFoto = async () => {
     if (cameraRef) {
       try {
@@ -71,7 +70,7 @@ export default function App() {
     }
   };
 
-  // Pantalla principal de cámara
+  // 🔹 Interfaz principal
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="back" ref={setCameraRef} />
@@ -82,29 +81,28 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  // Splash con gradiente
   splashContainer: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
   splashText: {
     color: "#fff",
     fontSize: 22,
-    fontWeight: "bold"
+    fontWeight: "bold",
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
-
-  // Cámara
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     marginTop: Platform.OS === "ios" ? 0 : StatusBar.currentHeight,
-    backgroundColor: "#000"
+    backgroundColor: "#000",
   },
   camera: {
     flex: 1,
     width: "100%",
-    aspectRatio: 1
-  }
+    aspectRatio: 1,
+  },
 });
