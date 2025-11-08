@@ -76,12 +76,12 @@ export default function App() {
       try {
         const fotoData = await cameraRef.current.takePictureAsync();
         setFoto(fotoData.uri);
-        console.log("📸 Foto tomada:", fotoData.uri);
+        console.log(" Foto tomada:", fotoData.uri);
 
         await MediaLibrary.saveToLibraryAsync(fotoData.uri);
-        Alert.alert("Éxito", "📷 Foto guardada en la galería.");
+        Alert.alert("Éxito", "Foto guardada en la galería.");
       } catch (error) {
-        console.log("❌ Error al tomar la foto:", error);
+        console.log(" Error al tomar la foto:", error);
         Alert.alert("Error", "No se pudo tomar la foto.");
       }
     }
