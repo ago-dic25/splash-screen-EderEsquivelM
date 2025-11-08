@@ -1,38 +1,47 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Button, Platform, Image } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  Platform,
+  Image,
+  Alert,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as MediaLibrary from "expo-media-library";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function App() {
+  // Estados
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const [foto, setFoto] = useState(null);
-  const [cameraRef, setCameraRef] = useState(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
 
+  //  Solicita permisos
   useEffect(() => {
     (async () => {
-      await MediaLibrary.requestPermissionsAsync();
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permisos", "Se necesitan permisos para guardar fotos.");
+      }
       await requestPermission();
     })();
 
-    // Muestra el splash 3 segundos
-    const timer = setTimeout(() => {
-      setIsSplashVisible(false);
-    }, 3000);
-
+    //  Simula pantalla splash 3 segundos
+    const timer = setTimeout(() => setIsSplashVisible(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
-  // 🔹 Pantalla splash
+  //  Splash screen con gradiente e imagen
   if (isSplashVisible) {
     return (
       <LinearGradient
-        colors={["#ff9966", "#ff5e62"]} // Gradiente naranja/rojo
+        colors={["#ff9966", "#ff5e62"]} // Gradiente naranja-rojo
         style={styles.splashContainer}
       >
-        {/* Puedes mostrar tu imagen splash.png aquí */}
         <Image
           source={require("./assets/splash.png")}
           style={{ width: 200, height: 200, marginBottom: 20 }}
@@ -43,37 +52,45 @@ export default function App() {
     );
   }
 
-  // 🔹 Estado de permisos
+  //  Verificación de permisos de cámara
   if (!permission) {
-    return <Text>Cargando permisos...</Text>;
+    return (
+      <View style={styles.container}>
+        <Text>Cargando permisos...</Text>
+      </View>
+    );
   }
 
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text>No hay permisos de cámara</Text>
-        <Button title="Permitir cámara" onPress={requestPermission} />
+        <Text>No se concedieron permisos para la cámara.</Text>
+        <Button title="Conceder permisos" onPress={requestPermission} />
       </View>
     );
   }
 
-  // 🔹 Función para tomar foto
+  //  Toma y guarda la foto
   const tomarFoto = async () => {
-    if (cameraRef) {
+    if (cameraRef.current) {
       try {
-        const fotoTomada = await cameraRef.takePictureAsync();
-        setFoto(fotoTomada.uri);
-        console.log("📸 Foto tomada:", fotoTomada.uri);
+        const fotoData = await cameraRef.current.takePictureAsync();
+        setFoto(fotoData.uri);
+        console.log("📸 Foto tomada:", fotoData.uri);
+
+        await MediaLibrary.saveToLibraryAsync(fotoData.uri);
+        Alert.alert("Éxito", "📷 Foto guardada en la galería.");
       } catch (error) {
-        console.log("❌ Error al tomar foto:", error);
+        console.log("❌ Error al tomar la foto:", error);
+        Alert.alert("Error", "No se pudo tomar la foto.");
       }
     }
   };
 
-  // 🔹 Interfaz principal
+  //  Pantalla principal
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing="back" ref={setCameraRef} />
+      <CameraView style={styles.camera} ref={cameraRef} facing="back" />
       <Button title="Tomar Foto" onPress={tomarFoto} />
       <StatusBar style="auto" />
     </View>
@@ -81,6 +98,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  // Pantalla splash
   splashContainer: {
     flex: 1,
     justifyContent: "center",
@@ -93,6 +111,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
+
+  //  Cámara
   container: {
     flex: 1,
     alignItems: "center",
@@ -101,8 +121,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   camera: {
-    flex: 1,
-    width: "100%",
-    aspectRatio: 1,
+    width: "90%",
+    height: 400,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 10,
   },
 });
